@@ -1,0 +1,47 @@
+﻿@page "/fetchdata"
+@using BlazorGridDemoENG.Shared
+@using Microsoft.AspNetCore.Components.QuickGrid;
+@inject HttpClient Http
+
+<PageTitle>Weather forecast</PageTitle>
+
+<h1>Weather forecast</h1>
+
+<p>This component demonstrates fetching data from the server.</p>
+
+<div style="display: @(loading ? "block" : "none")">
+    <p>Loading...</p>
+</div>
+
+<div class="grid" tabindex="-1" style="display: @(loading ? "none" : "block")">
+    <QuickGrid ItemsProvider="wfProvider">
+        <PropertyColumn Format="dd-MM-yyyy" 
+        Property="@(c => c.Date)" Sortable="true" IsDefaultSort="SortDirection.Ascending" />
+        <PropertyColumn Property="@(c => c.TemperatureC)" />
+        <PropertyColumn Property="@(c => c.TemperatureF)" />
+        <PropertyColumn Property="@(c => c.Summary)" />
+
+    </QuickGrid>
+</div>
+
+@code {
+    GridItemsProvider<WeatherForecast>? wfProvider;
+    bool loading = true;
+    protected override void OnInitialized()
+    {
+
+        wfProvider = async req =>
+        {
+            var sortByAscending = req.SortByAscending;
+            var column = req.SortByColumn!.Title;
+            var response = await Http.GetFromJsonAsync<WeatherForecast[]>(
+                $"WeatherForecast?sortByAscending={sortByAscending}&column={column}");
+            loading = false;
+            StateHasChanged();
+            return GridItemsProviderResult.From(items: response!,
+            totalItemCount: response!.Count());
+
+        };
+
+    }
+}

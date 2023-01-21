@@ -1,0 +1,86 @@
+﻿@page "/"
+@using BlazorGridDemoENG.Shared;
+@using Microsoft.AspNetCore.Components.QuickGrid
+
+<PageTitle>Index</PageTitle>
+
+<p>
+    @Message
+</p>
+
+<QuickGrid Items="@People" @ref="grid" Pagination="pagination">
+    <PropertyColumn Property="@(p => p.Id)" Sortable="true"
+                    IsDefaultSort="SortDirection.Ascending"></PropertyColumn>
+    <PropertyColumn Property="@(p => p.FirstName)" Sortable="true" Title="First Name" />
+    <PropertyColumn Property="@(p => p.LastName.ToUpper())" Sortable="true" Title="Last Name" />
+    <PropertyColumn Property="@(p => p.DateOfBirth)" Sortable="true" Format="dd-MM-yyyy" />
+    <PropertyColumn Property="@(p => p.Score)" Sortable="true" Align="Align.Right" />
+    <PropertyColumn Property="@(p => p.Active)" Sortable="true">
+        <ColumnOptions>
+            <label>
+                <input type="checkbox" @bind="activeOnly" @bind:after="Filter" /> Actives only
+            </label>
+        </ColumnOptions>    
+    </PropertyColumn>
+    <TemplateColumn Title="Actions">
+        <button class="btn btn-primary" @onclick="@(() => Edit(context))">Edit</button>
+    </TemplateColumn>
+</QuickGrid>
+
+<Paginator Value="@pagination" />
+
+@code {
+    public IQueryable<Person> OriginalPeople { get; set; } = null!;
+    public IQueryable<Person> People { get; set; } = null!;
+    public string? Message { get; set; }
+    QuickGrid<Person>? grid;
+    private bool activeOnly;
+    PaginationState pagination = new PaginationState { ItemsPerPage = 10 };
+
+    protected override void OnInitialized()
+    {
+        OriginalPeople = GetPeople().AsQueryable();
+        People = OriginalPeople;
+    }
+
+    public async Task Filter()
+    {
+        if (activeOnly)
+        {
+            People = OriginalPeople.Where(p => p.Active);
+        }
+        else
+        {
+            People = OriginalPeople;
+        }
+
+        await grid!.RefreshDataAsync();
+
+    }
+
+    private void Edit(Person p)
+    {
+        Message = "Editing: " + p.FirstName;
+    }
+
+    public List<Person> GetPeople()
+    {
+        var result = new List<Person>();
+
+        for (int i = 1; i <= 100; i++)
+        {
+            result.Add(new Person
+                {
+                    Id = i,
+                    FirstName = Faker.Name.First(),
+                    LastName = Faker.Name.Last(),
+                    DateOfBirth = Faker.Identification.DateOfBirth(),
+                    Active = Faker.Boolean.Random(),
+                    Score = Faker.RandomNumber.Next(100)
+                });
+        }
+
+
+        return result;
+    }
+}
